@@ -56,7 +56,9 @@ const AudioRecorder = () => {
       });
 
       try {
-        const response = await axios.post('http://192.168.100.190:8000/api/upload-audio', formData, {
+        // DAY SAU : 192.168.100.190:8000
+        // OPPOReno : 192.168.89.250 Laravel
+        const response = await axios.post('http://192.168.89.250:8000/api/upload-audio', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },

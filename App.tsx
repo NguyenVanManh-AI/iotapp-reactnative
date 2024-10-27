@@ -4,7 +4,8 @@ import AudioRecorder from './AudioRecorder.tsx';
 
 // Function to send command to ESP8266
 const sendCommand = async (option: number) => {
-  const url = 'http://192.168.100.150/sendOption'; // ESP8266 IP address
+  // const url = 'http://192.168.100.150/sendOption'; // ESP8266 IP address (DAY SAU)
+  const url = 'http://192.168.89.168/sendOption'; // ESP8266 IP address (OPPOReno)
   const data = { option }; // Data to be sent
 
   try {
