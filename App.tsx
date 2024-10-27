@@ -1,117 +1,114 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState } from 'react';
+import { View, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
+import AudioRecorder from './AudioRecorder.tsx';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+// Function to send command to ESP8266
+const sendCommand = async (option: number) => {
+  const url = 'http://192.168.100.150/sendOption'; // ESP8266 IP address
+  const data = { option }; // Data to be sent
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  try {
+    // Sending POST request using fetch
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams(data).toString(),
+    });
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+    // Checking the response status
+    if (response.ok) {
+      console.log('Success', `Command sent successfully: Option ${option}`);
+    } else {
+      console.log('Error', `Failed to send command: ${response.status}`);
+      Alert.alert('Error', `Failed to send command: ${response.status}`);
+    }
+  } catch (error) {
+    console.log('Connection Error', error.message);
+    Alert.alert('Connection Error', error.message);
+  }
+};
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+// Custom button component for better styling
+const ControlButton = ({ title, isActive, onPress }: { title: string; isActive: boolean; onPress: () => void }) => (
+  <TouchableOpacity style={[styles.button, isActive && styles.activeButton]} onPress={onPress}>
+    <Text style={styles.buttonText}>{isActive ? 'Off' : 'On'} {title}</Text>
+  </TouchableOpacity>
+);
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+// Main component
+const App = () => {
+  const [fanOn, setFanOn] = useState(false);
+  const [bedroomLightOn, setBedroomLightOn] = useState(false);
+  const [diningRoomLightOn, setDiningRoomLightOn] = useState(false);
+  const [livingRoomLightOn, setLivingRoomLightOn] = useState(false);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const toggleFan = () => {
+    const newState = !fanOn;
+    sendCommand(newState ? 1 : 2); // 1 for ON, 2 for OFF
+    setFanOn(newState);
+  };
+
+  const toggleBedroomLight = () => {
+    const newState = !bedroomLightOn;
+    sendCommand(newState ? 3 : 4); // 3 for ON, 4 for OFF
+    setBedroomLightOn(newState);
+  };
+
+  const toggleDiningRoomLight = () => {
+    const newState = !diningRoomLightOn;
+    sendCommand(newState ? 5 : 6); // 5 for ON, 6 for OFF
+    setDiningRoomLightOn(newState);
+  };
+
+  const toggleLivingRoomLight = () => {
+    const newState = !livingRoomLightOn;
+    sendCommand(newState ? 7 : 8); // 7 for ON, 8 for OFF
+    setLivingRoomLightOn(newState);
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Smart Home Device Control</Text> {/* Tiêu đề */}
+      <ControlButton title="Fan" isActive={fanOn} onPress={toggleFan} />
+      <ControlButton title="Bedroom Light" isActive={bedroomLightOn} onPress={toggleBedroomLight} />
+      <ControlButton title="Dining Room Light" isActive={diningRoomLightOn} onPress={toggleDiningRoomLight} />
+      <ControlButton title="Living Room Light" isActive={livingRoomLightOn} onPress={toggleLivingRoomLight} />
+      <AudioRecorder />
+    </View>
   );
-}
+};
 
+// Styling for the component
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5FCFF',
+    padding: 20,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  title: {
+    fontSize: 24,            // Kích thước chữ cho tiêu đề
+    fontWeight: 'bold',      // Đậm
+    marginBottom: 20,        // Khoảng cách dưới tiêu đề
   },
-  sectionDescription: {
-    marginTop: 8,
+  button: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 8,
+    marginVertical: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: '400',
+    fontWeight: 'bold',
   },
-  highlight: {
-    fontWeight: '700',
+  activeButton: {
+    backgroundColor: '#FF5722', // Change color when active
   },
 });
 
