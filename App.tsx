@@ -33,7 +33,7 @@ const sendCommand = async (option: number) => {
 // Custom button component for better styling
 const ControlButton = ({ title, isActive, onPress }: { title: string; isActive: boolean; onPress: () => void }) => (
   <TouchableOpacity style={[styles.button, isActive && styles.activeButton]} onPress={onPress}>
-    <Text style={styles.buttonText}>{isActive ? 'Off' : 'On'} {title}</Text>
+    <Text style={styles.buttonText}>{title === 'Door' ? (isActive ? 'Close' : 'Open') : (isActive ? 'Off' : 'On')} {title}</Text> {/* Thay đổi ở đây */}
   </TouchableOpacity>
 );
 
