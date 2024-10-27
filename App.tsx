@@ -43,6 +43,7 @@ const App = () => {
   const [bedroomLightOn, setBedroomLightOn] = useState(false);
   const [diningRoomLightOn, setDiningRoomLightOn] = useState(false);
   const [livingRoomLightOn, setLivingRoomLightOn] = useState(false);
+  const [doorOpen, setDoorOpen] = useState(false); // State for door
 
   const toggleFan = () => {
     const newState = !fanOn;
@@ -50,21 +51,27 @@ const App = () => {
     setFanOn(newState);
   };
 
+  const toggleDoor = () => {
+    const newState = !doorOpen;
+    sendCommand(newState ? 3 : 4); // 3 for Open, 4 for Close
+    setDoorOpen(newState);
+  };
+
   const toggleBedroomLight = () => {
     const newState = !bedroomLightOn;
-    sendCommand(newState ? 3 : 4); // 3 for ON, 4 for OFF
+    sendCommand(newState ? 5 : 6); // 5 for ON, 6 for OFF
     setBedroomLightOn(newState);
   };
 
   const toggleDiningRoomLight = () => {
     const newState = !diningRoomLightOn;
-    sendCommand(newState ? 5 : 6); // 5 for ON, 6 for OFF
+    sendCommand(newState ? 7 : 8); // 7 for ON, 8 for OFF
     setDiningRoomLightOn(newState);
   };
 
   const toggleLivingRoomLight = () => {
     const newState = !livingRoomLightOn;
-    sendCommand(newState ? 7 : 8); // 7 for ON, 8 for OFF
+    sendCommand(newState ? 9 : 10); // 9 for ON, 10 for OFF
     setLivingRoomLightOn(newState);
   };
 
@@ -72,6 +79,7 @@ const App = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Smart Home Device Control</Text> {/* Tiêu đề */}
       <ControlButton title="Fan" isActive={fanOn} onPress={toggleFan} />
+      <ControlButton title="Door" isActive={doorOpen} onPress={toggleDoor} /> {/* Nút mở/đóng cửa */}
       <ControlButton title="Bedroom Light" isActive={bedroomLightOn} onPress={toggleBedroomLight} />
       <ControlButton title="Dining Room Light" isActive={diningRoomLightOn} onPress={toggleDiningRoomLight} />
       <ControlButton title="Living Room Light" isActive={livingRoomLightOn} onPress={toggleLivingRoomLight} />
