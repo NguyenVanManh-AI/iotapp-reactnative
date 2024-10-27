@@ -96,18 +96,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
-    padding: 20,
+    padding: 10,
   },
   title: {
     fontSize: 24,            // Kích thước chữ cho tiêu đề
     fontWeight: 'bold',      // Đậm
-    marginBottom: 20,        // Khoảng cách dưới tiêu đề
+    marginBottom: 10,        // Khoảng cách dưới tiêu đề
   },
   button: {
     backgroundColor: '#4CAF50',
     padding: 15,
     borderRadius: 8,
-    marginVertical: 10,
+    marginVertical: 5,
     width: '80%',
     alignItems: 'center',
   },

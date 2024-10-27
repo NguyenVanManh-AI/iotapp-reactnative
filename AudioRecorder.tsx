@@ -64,7 +64,7 @@ const AudioRecorder = () => {
           },
         });
         console.log('Audio uploaded successfully:', response.data);
-        Alert.alert('Audio uploaded successfully: ' + response.data);
+        Alert.alert('Successful control');
       } catch (error) {
         console.error('Error uploading audio:', error);
         Alert.alert('Upload error', error.response ? error.response.data.error : error.message);
@@ -104,13 +104,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     marginTop: 0,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   button: {
     backgroundColor: 'blue',
     borderRadius: 5,
     padding: 10,
-    margin: 10,
+    margin: 5,
     alignItems: 'center',
   },
   buttonText: {
