@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 	},
 	uploadText: {
-		color: 'red',
+		color: '#4CAF50',
 		fontSize: 16,
 		marginTop: 10,
 	},
