@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View, Alert } from 'react-native';
 import AudioRecorderPlayer, { AudioEncoderAndroidType, AudioSet, AudioSourceAndroidType } from 'react-native-audio-recorder-player';
 import axios from 'axios';
@@ -13,31 +13,55 @@ const AudioRecorder = ({ onOptionChange }) => {
 	};
 
 	const [isRecording, setIsRecording] = useState(false);
-	const [isUploading, setIsUploading] = useState(false); // Thêm trạng thái isUploading
+	const [isUploading, setIsUploading] = useState(false);
 	const [audioPath, setAudioPath] = useState<string | null>(null);
+	const silenceThreshold = -10; // Ngưỡng âm lượng (dB)
+	const silenceTimeout = 2000; // Thời gian chờ trước khi tự động dừng (ms)
+
+	useEffect(() => {
+		if (isRecording) {
+			let silenceTimer;
+			audioRecorderPlayer.addRecordBackListener((e) => {
+				const currentVolume = e.currentMetering;
+				if (currentVolume < silenceThreshold) {
+					if (!silenceTimer) {
+						silenceTimer = setTimeout(async () => {
+							await stopRecording(); // Tự động dừng ghi âm
+						}, silenceTimeout);
+					}
+				} else if (silenceTimer) {
+					clearTimeout(silenceTimer); // Hủy bỏ hẹn giờ nếu phát hiện âm thanh
+					silenceTimer = null;
+				}
+			});
+			return () => {
+				audioRecorderPlayer.removeRecordBackListener();
+				if (silenceTimer) clearTimeout(silenceTimer);
+			};
+		}
+	}, [isRecording]);
 
 	const handleRecordPress = async () => {
-		try {
-			if (!isRecording) {
-				const path = await audioRecorderPlayer.startRecorder(undefined, audioSet, true);
-				console.log(`Recording started: ${path}`);
-				setAudioPath(path);
-				setIsRecording(!isRecording); // Dừng rồi upload 
-			} else {
-				const result = await audioRecorderPlayer.stopRecorder();
-				console.log(`Recording stopped: ${result}`);
-				setIsRecording(!isRecording); // Dừng rồi upload 
-				await handleUploadPress(); // Automatically upload after stopping
-			}
-		} catch (error) {
-			console.error(error);
+		if (!isRecording) {
+			const path = await audioRecorderPlayer.startRecorder(undefined, audioSet, true);
+			console.log(`Recording started: ${path}`);
+			setAudioPath(path);
+			setIsRecording(true);
+		} else {
+			await stopRecording();
 		}
+	};
+
+	const stopRecording = async () => {
+		const result = await audioRecorderPlayer.stopRecorder();
+		console.log(`Recording stopped: ${result}`);
+		setIsRecording(false);
+		await handleUploadPress(); // Tự động upload sau khi dừng
 	};
 
 	const handleUploadPress = async () => {
 		if (audioPath) {
-			setIsUploading(true); // Bắt đầu upload
-
+			setIsUploading(true);
 			const formData = new FormData();
 			formData.append('audio', {
 				uri: audioPath,
@@ -46,14 +70,14 @@ const AudioRecorder = ({ onOptionChange }) => {
 			});
 
 			try {
-				const response = await axios.post('http://192.168.100.190:8000/api/upload-audio', formData, {
+				const response = await axios.post('http://192.168.89.250:8000/api/upload-audio', formData, {
 					headers: {
 						'Content-Type': 'multipart/form-data',
 					},
 				});
 				console.log('Upload success', response.data);
 				if (response.data.status == 'ok') {
-					if(response.data.transcription) Alert.alert(response.data.transcription);
+					if (response.data.transcription) Alert.alert(response.data.transcription);
 					else Alert.alert('Successful control !');
 					
 					const option = response.data.option;
@@ -66,7 +90,7 @@ const AudioRecorder = ({ onOptionChange }) => {
 				console.error('Upload error !', error);
 				Alert.alert('Upload error !');
 			} finally {
-				setIsUploading(false); // Kết thúc upload
+				setIsUploading(false);
 			}
 		} else {
 			console.warn('No audio file to upload !');
@@ -80,7 +104,7 @@ const AudioRecorder = ({ onOptionChange }) => {
 			<Pressable onPress={handleRecordPress} style={styles.button}>
 				<Text style={styles.buttonText}>{isRecording ? 'Stop Recording' : 'Start Recording'}</Text>
 			</Pressable>
-			{isUploading && <Text style={styles.uploadText}>Are controlling...</Text>} {/* Hiển thị văn bản "Controlling..." */}
+			{isUploading && <Text style={styles.uploadText}>Are controlling...</Text>}
 		</View>
 	);
 };
@@ -108,7 +132,7 @@ const styles = StyleSheet.create({
 		color: 'white',
 		fontSize: 16,
 	},
-	uploadText: { // Thêm style cho văn bản "Controlling..."
+	uploadText: {
 		color: 'red',
 		fontSize: 16,
 		marginTop: 10,
