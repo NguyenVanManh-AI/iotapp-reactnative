@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View, Alert } from 'react-native';
 import AudioRecorderPlayer, { AudioEncoderAndroidType, AudioSet, AudioSourceAndroidType } from 'react-native-audio-recorder-player';
 import axios from 'axios';
@@ -6,7 +6,7 @@ import axios from 'axios';
 const audioRecorderPlayer = new AudioRecorderPlayer();
 audioRecorderPlayer.setSubscriptionDuration(0.1);
 
-const AudioRecorder = () => {
+const AudioRecorder = ({ onOptionChange }) => {
   const audioSet: AudioSet = {
     AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
     AudioSourceAndroid: AudioSourceAndroidType.MIC,
@@ -18,31 +18,17 @@ const AudioRecorder = () => {
   const handleRecordPress = async () => {
     try {
       if (!isRecording) {
-        // Start recording
         const path = await audioRecorderPlayer.startRecorder(undefined, audioSet, true);
         console.log(`Recording started: ${path}`);
-        setAudioPath(path); // Save audio path
+        setAudioPath(path);
       } else {
-        // Stop recording
         const result = await audioRecorderPlayer.stopRecorder();
         console.log(`Recording stopped: ${result}`);
+        await handleUploadPress(); // Automatically upload after stopping
       }
       setIsRecording(!isRecording);
     } catch (error) {
       console.error(error);
-    }
-  };
-
-  const handlePlayPress = async () => {
-    if (audioPath) {
-      try {
-        await audioRecorderPlayer.startPlayer(audioPath);
-        console.log('Playing audio...');
-      } catch (error) {
-        console.error(error);
-      }
-    } else {
-      console.warn('No audio file available to play');
     }
   };
 
@@ -51,23 +37,31 @@ const AudioRecorder = () => {
       const formData = new FormData();
       formData.append('audio', {
         uri: audioPath,
-        type: 'audio/mpeg', // Specify type as MP3
-        name: 'recordedAudio.mp3', // Set audio file name
+        type: 'audio/mpeg',
+        name: 'recordedAudio.mp3',
       });
 
       try {
-        // DAY SAU : 192.168.100.190:8000
-        // OPPOReno : 192.168.89.250 Laravel
         const response = await axios.post('http://192.168.89.250:8000/api/upload-audio', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
         console.log('Audio uploaded successfully:', response.data);
-        Alert.alert('Successful control');
+        if(response.data.transcription) {
+          Alert.alert(response.data.transcription);
+        }
+        else {
+          Alert.alert('Control success !');
+        }
+
+        const option = response.data.option;
+        if (onOptionChange && typeof option === 'number') {
+          onOptionChange(option); // Send option to parent
+        }
       } catch (error) {
         console.error('Error uploading audio:', error);
-        Alert.alert('Upload error', error.response ? error.response.data.error : error.message);
+        Alert.alert('Upload error');
       }
     } else {
       console.warn('No audio file to upload');
@@ -78,17 +72,8 @@ const AudioRecorder = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Voice control</Text>
-
       <Pressable onPress={handleRecordPress} style={styles.button}>
         <Text style={styles.buttonText}>{isRecording ? 'Stop Recording' : 'Start Recording'}</Text>
-      </Pressable>
-
-      <Pressable onPress={handleUploadPress} style={styles.button}>
-        <Text style={styles.buttonText}>Control</Text>
-      </Pressable>
-
-      <Pressable onPress={handlePlayPress} style={styles.button}>
-        <Text style={styles.buttonText}>Replay</Text>
       </Pressable>
     </View>
   );

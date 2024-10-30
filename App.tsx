@@ -4,12 +4,10 @@ import AudioRecorder from './AudioRecorder.tsx';
 
 // Function to send command to ESP8266
 const sendCommand = async (option: number) => {
-  // const url = 'http://192.168.100.150/sendOption'; // ESP8266 IP address (DAY SAU)
   const url = 'http://192.168.89.168/sendOption'; // ESP8266 IP address (OPPOReno)
   const data = { option }; // Data to be sent
 
   try {
-    // Sending POST request using fetch
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -18,7 +16,6 @@ const sendCommand = async (option: number) => {
       body: new URLSearchParams(data).toString(),
     });
 
-    // Checking the response status
     if (response.ok) {
       console.log('Success', `Command sent successfully: Option ${option}`);
     } else {
@@ -32,9 +29,9 @@ const sendCommand = async (option: number) => {
 };
 
 // Custom button component for better styling
-const ControlButton = ({ title, isActive, onPress }: { title: string; isActive: boolean; onPress: () => void }) => (
+const ControlButton = ({ title, isActive, onPress }) => (
   <TouchableOpacity style={[styles.button, isActive && styles.activeButton]} onPress={onPress}>
-    <Text style={styles.buttonText}>{title === 'Door' ? (isActive ? 'Close' : 'Open') : (isActive ? 'Off' : 'On')} {title}</Text> {/* Thay đổi ở đây */}
+    <Text style={styles.buttonText}>{title === 'Window' ? (isActive ? 'Close' : 'Open') : (isActive ? 'Off' : 'On')} {title}</Text>
   </TouchableOpacity>
 );
 
@@ -44,47 +41,59 @@ const App = () => {
   const [bedroomLightOn, setBedroomLightOn] = useState(false);
   const [diningRoomLightOn, setDiningRoomLightOn] = useState(false);
   const [livingRoomLightOn, setLivingRoomLightOn] = useState(false);
-  const [doorOpen, setDoorOpen] = useState(false); // State for door
+  const [windowOpen, setWindowOpen] = useState(false);
 
-  const toggleFan = () => {
-    const newState = !fanOn;
-    sendCommand(newState ? 1 : 2); // 1 for ON, 2 for OFF
-    setFanOn(newState);
-  };
+  // Function to handle option received from AudioRecorder or button press
+  const handleOptionUpdate = async (option: number) => {
+    console.log(`Received option: ${option}`);
+    await sendCommand(option); // Send command to ESP8266
 
-  const toggleDoor = () => {
-    const newState = !doorOpen;
-    sendCommand(newState ? 3 : 4); // 3 for Open, 4 for Close
-    setDoorOpen(newState);
-  };
-
-  const toggleBedroomLight = () => {
-    const newState = !bedroomLightOn;
-    sendCommand(newState ? 5 : 6); // 5 for ON, 6 for OFF
-    setBedroomLightOn(newState);
-  };
-
-  const toggleDiningRoomLight = () => {
-    const newState = !diningRoomLightOn;
-    sendCommand(newState ? 7 : 8); // 7 for ON, 8 for OFF
-    setDiningRoomLightOn(newState);
-  };
-
-  const toggleLivingRoomLight = () => {
-    const newState = !livingRoomLightOn;
-    sendCommand(newState ? 9 : 10); // 9 for ON, 10 for OFF
-    setLivingRoomLightOn(newState);
+    // Update state based on option
+    switch (option) {
+      case 1:
+        setFanOn(true);
+        break;
+      case 2:
+        setFanOn(false);
+        break;
+      case 3:
+        setWindowOpen(true);
+        break;
+      case 4:
+        setWindowOpen(false);
+        break;
+      case 5:
+        setBedroomLightOn(true);
+        break;
+      case 6:
+        setBedroomLightOn(false);
+        break;
+      case 7:
+        setDiningRoomLightOn(true);
+        break;
+      case 8:
+        setDiningRoomLightOn(false);
+        break;
+      case 9:
+        setLivingRoomLightOn(true);
+        break;
+      case 10:
+        setLivingRoomLightOn(false);
+        break;
+      default:
+        console.log('Unrecognized option');
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Smart Home Device Control</Text> {/* Tiêu đề */}
-      <ControlButton title="Fan" isActive={fanOn} onPress={toggleFan} />
-      <ControlButton title="Door" isActive={doorOpen} onPress={toggleDoor} /> {/* Nút mở/đóng cửa */}
-      <ControlButton title="Bedroom Light" isActive={bedroomLightOn} onPress={toggleBedroomLight} />
-      <ControlButton title="Dining Room Light" isActive={diningRoomLightOn} onPress={toggleDiningRoomLight} />
-      <ControlButton title="Living Room Light" isActive={livingRoomLightOn} onPress={toggleLivingRoomLight} />
-      <AudioRecorder />
+      <Text style={styles.title}>Smart Home Device Control</Text>
+      <ControlButton title="Fan" isActive={fanOn} onPress={() => handleOptionUpdate(fanOn ? 2 : 1)} />
+      <ControlButton title="Window" isActive={windowOpen} onPress={() => handleOptionUpdate(windowOpen ? 4 : 3)} />
+      <ControlButton title="Bedroom Light" isActive={bedroomLightOn} onPress={() => handleOptionUpdate(bedroomLightOn ? 6 : 5)} />
+      <ControlButton title="Dining Room Light" isActive={diningRoomLightOn} onPress={() => handleOptionUpdate(diningRoomLightOn ? 8 : 7)} />
+      <ControlButton title="Living Room Light" isActive={livingRoomLightOn} onPress={() => handleOptionUpdate(livingRoomLightOn ? 10 : 9)} />
+      <AudioRecorder onOptionChange={handleOptionUpdate} /> {/* Pass callback to child */}
     </View>
   );
 };
@@ -95,13 +104,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
     padding: 10,
   },
   title: {
-    fontSize: 24,            // Kích thước chữ cho tiêu đề
-    fontWeight: 'bold',      // Đậm
-    marginBottom: 10,        // Khoảng cách dưới tiêu đề
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   button: {
     backgroundColor: '#4CAF50',
@@ -117,7 +125,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   activeButton: {
-    backgroundColor: '#FF5722', // Change color when active
+    backgroundColor: '#FF5722',
   },
 });
 
