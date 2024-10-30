@@ -13,6 +13,7 @@ const AudioRecorder = ({ onOptionChange }) => {
 	};
 
 	const [isRecording, setIsRecording] = useState(false);
+	const [isUploading, setIsUploading] = useState(false); // Thêm trạng thái isUploading
 	const [audioPath, setAudioPath] = useState<string | null>(null);
 
 	const handleRecordPress = async () => {
@@ -21,12 +22,13 @@ const AudioRecorder = ({ onOptionChange }) => {
 				const path = await audioRecorderPlayer.startRecorder(undefined, audioSet, true);
 				console.log(`Recording started: ${path}`);
 				setAudioPath(path);
+				setIsRecording(!isRecording); // Dừng rồi upload 
 			} else {
 				const result = await audioRecorderPlayer.stopRecorder();
 				console.log(`Recording stopped: ${result}`);
+				setIsRecording(!isRecording); // Dừng rồi upload 
 				await handleUploadPress(); // Automatically upload after stopping
 			}
-			setIsRecording(!isRecording);
 		} catch (error) {
 			console.error(error);
 		}
@@ -34,6 +36,8 @@ const AudioRecorder = ({ onOptionChange }) => {
 
 	const handleUploadPress = async () => {
 		if (audioPath) {
+			setIsUploading(true); // Bắt đầu upload
+
 			const formData = new FormData();
 			formData.append('audio', {
 				uri: audioPath,
@@ -47,25 +51,26 @@ const AudioRecorder = ({ onOptionChange }) => {
 						'Content-Type': 'multipart/form-data',
 					},
 				});
-				console.log('Audio uploaded successfully:', response.data);
-				if (response.data.transcription) {
-					Alert.alert(response.data.transcription);
-				}
+				console.log('Upload success', response.data);
+				if (response.data.status == 'ok') {
+					if(response.data.transcription) Alert.alert(response.data.transcription);
+					else Alert.alert('Successful control !');
+					
+					const option = response.data.option;
+					if (onOptionChange && typeof option === 'number') onOptionChange(option); // Send option to parent
+				} 
 				else {
-					Alert.alert('Control success !');
-				}
-
-				const option = response.data.option;
-				if (onOptionChange && typeof option === 'number') {
-					onOptionChange(option); // Send option to parent
+					Alert.alert(response.data.message);
 				}
 			} catch (error) {
-				console.error('Error uploading audio:', error);
-				Alert.alert('Upload error');
+				console.error('Upload error !', error);
+				Alert.alert('Upload error !');
+			} finally {
+				setIsUploading(false); // Kết thúc upload
 			}
 		} else {
-			console.warn('No audio file to upload');
-			Alert.alert('No audio file to upload');
+			console.warn('No audio file to upload !');
+			Alert.alert('No audio file to upload !');
 		}
 	};
 
@@ -75,6 +80,7 @@ const AudioRecorder = ({ onOptionChange }) => {
 			<Pressable onPress={handleRecordPress} style={styles.button}>
 				<Text style={styles.buttonText}>{isRecording ? 'Stop Recording' : 'Start Recording'}</Text>
 			</Pressable>
+			{isUploading && <Text style={styles.uploadText}>Are controlling...</Text>} {/* Hiển thị văn bản "Controlling..." */}
 		</View>
 	);
 };
@@ -101,6 +107,11 @@ const styles = StyleSheet.create({
 	buttonText: {
 		color: 'white',
 		fontSize: 16,
+	},
+	uploadText: { // Thêm style cho văn bản "Controlling..."
+		color: 'red',
+		fontSize: 16,
+		marginTop: 10,
 	},
 });
 
